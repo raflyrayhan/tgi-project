@@ -1,5 +1,5 @@
 // endpoint proxy (sesuaikan jika bukan Vercel/Netlify)
-const PROXY = '/api/notion-proxy';
+const PROXY = '/api/proxy';
 const ROOT_PAGE_ID = '208955526aa58049a7bcec16acd51067'; // ganti dengan Page ID utama
 
 /** Fetch children blocks */
