@@ -22,152 +22,240 @@ async function apiCall(body) {
 // Fetch page title
 async function fetchPageTitle(pageId) {
   const json = await apiCall({ action:'getPage', page_id: pageId });
-  // asumsikan proxy me-return full page object
-  return json.properties.title.title[0]?.plain_text;
+  return json.properties.title.title[0]?.plain_text || 'Untitled';
 }
 
 // Fetch block children
 async function fetchBlocks({ page_id=null, block_id=null }) {
-  const body = block_id
-    ? { block_id, action:'getBlocks' }
-    : { page_id, action:'getBlocks' };
-  const json = await apiCall(body);
-  return json.results;
+  const json = await apiCall({ action:'getBlocks', page_id, block_id });
+  return json.results || [];
 }
 
 // Render a single block (returns HTMLElement)
 async function renderBlock(b) {
-  let el;
-  switch(b.type) {
-    case 'paragraph':
+  let el;  
+
+  switch (b.type) {
+    // ─── Paragraph ───────────────────────────────────────
+    case 'paragraph': {
       el = document.createElement('p');
-      el.textContent = b.paragraph.rich_text.map(r=>r.plain_text).join('');
-      break;
-    case 'heading_1': case 'heading_2': case 'heading_3': {
-      const lvl = b.type.split('_')[1];
-      el = document.createElement(`h${lvl}`);
-      el.textContent = b[b.type].rich_text.map(r=>r.plain_text).join('');
+      el.textContent = b.paragraph.rich_text
+        .map(rt => rt.plain_text)
+        .join('');
       break;
     }
-    case 'bulleted_list_item':
-    case 'numbered_list_item':
-      el = document.createElement('li');
-      el.textContent = b[b.type].rich_text.map(r=>r.plain_text).join('');
+
+    // ─── Headings ────────────────────────────────────────
+    case 'heading_1':
+    case 'heading_2':
+    case 'heading_3': {
+      const lvl = b.type.split('_')[1];
+      el = document.createElement(`h${lvl}`);
+      el.textContent = b[b.type].rich_text
+        .map(rt => rt.plain_text)
+        .join('');
       break;
-    case 'to_do':
+    }
+
+    // ─── Lists ────────────────────────────────────────────
+    case 'bulleted_list_item':
+    case 'numbered_list_item': {
+      const tag = b.type === 'bulleted_list_item' ? 'li' : 'li';
+      el = document.createElement(tag);
+      el.textContent = b[b.type].rich_text
+        .map(rt => rt.plain_text)
+        .join('');
+      break;
+    }
+
+    // ─── To-Do ────────────────────────────────────────────
+    case 'to_do': {
       el = document.createElement('label');
       el.className = 'to-do';
       const cb = document.createElement('input');
-      cb.type='checkbox'; cb.disabled=true; cb.checked=b.to_do.checked;
-      el.append(cb, ' '+ b.to_do.rich_text.map(r=>r.plain_text).join(''));
+      cb.type = 'checkbox';
+      cb.checked = b.to_do.checked;
+      cb.disabled = true;
+      el.append(cb, ' ' + b.to_do.rich_text.map(rt => rt.plain_text).join(''));
       break;
-    case 'toggle':
+    }
+
+    // ─── Toggle ──────────────────────────────────────────
+    case 'toggle': {
       el = document.createElement('details');
-      el.className='block toggle';
+      el.className = 'block toggle';
       const sum = document.createElement('summary');
-      sum.textContent = b.toggle.rich_text.map(r=>r.plain_text).join('');
+      sum.textContent = b.toggle.rich_text.map(rt => rt.plain_text).join('');
       el.append(sum);
-      if(b.has_children) {
+      if (b.has_children) {
         const kids = await fetchBlocks({ block_id: b.id });
-        for(const kb of kids) el.append(await renderBlock(kb));
+        for (const kb of kids) {
+          el.append(await renderBlock(kb));
+        }
       }
       break;
-    case 'callout':
+    }
+
+    // ─── Callout ─────────────────────────────────────────
+    case 'callout': {
       el = document.createElement('aside');
-      el.className='callout';
-      const icon = b.callout.icon?.emoji || '💡';
-      const ico = document.createElement('span');
-      ico.className='callout-icon'; ico.textContent = icon;
+      el.className = 'callout';
+      const icon = document.createElement('span');
+      icon.className = 'callout-icon';
+      icon.textContent = b.callout.icon?.emoji || '💡';
       const txt = document.createElement('div');
-      txt.className='callout-content';
-      txt.textContent = b.callout.rich_text.map(r=>r.plain_text).join('');
-      el.append(ico, txt);
+      txt.className = 'callout-content';
+      txt.textContent = b.callout.rich_text.map(rt => rt.plain_text).join('');
+      el.append(icon, txt);
       break;
-    case 'image':
+    }
+
+    // ─── Image ───────────────────────────────────────────
+    case 'image': {
       el = document.createElement('img');
-      el.src = b.image[b.image.type].url;
-      el.alt = b.image.caption[0]?.plain_text||'';
+      const imgObj = b.image[b.image.type];
+      el.src = imgObj.url;
+      el.alt = b.image.caption[0]?.plain_text || '';
       break;
-    case 'embed':
+    }
+
+    // ─── Embed & Media ───────────────────────────────────
+    case 'embed': {
       el = document.createElement('iframe');
       el.src = b.embed.url;
-      el.setAttribute('frameborder','0');
+      el.setAttribute('frameborder', '0');
       break;
-    case 'video':
+    }
+    case 'video': {
       el = document.createElement('video');
-      el.controls=true; el.src = b.video[b.video.type].url;
+      el.controls = true;
+      el.src = b.video[b.video.type].url;
       break;
-    case 'audio':
+    }
+    case 'audio': {
       el = document.createElement('audio');
-      el.controls=true; el.src = b.audio[b.audio.type].url;
+      el.controls = true;
+      el.src = b.audio[b.audio.type].url;
       break;
-    case 'bookmark':
+    }
+
+    // ─── Bookmark ────────────────────────────────────────
+    case 'bookmark': {
       el = document.createElement('a');
-      el.href = b.bookmark.url; el.target='_blank';
-      el.textContent = b.bookmark.caption[0]?.plain_text||b.bookmark.url;
+      el.href = b.bookmark.url;
+      el.target = '_blank';
+      el.textContent = b.bookmark.caption[0]?.plain_text || b.bookmark.url;
       break;
+    }
+
+    // ─── Table ───────────────────────────────────────────
     case 'table': {
       const rows = await fetchBlocks({ block_id: b.id });
-      const table = document.createElement('table');
-      rowLoop: if(rows.length) {
+      el = document.createElement('table');
+      if (rows.length) {
+        // Header
         const thead = document.createElement('thead');
         const trh = document.createElement('tr');
-        rows[0].table_row.cells.forEach(c=>{
+        rows[0].table_row.cells.forEach(cell => {
           const th = document.createElement('th');
-          th.textContent = c.map(r=>r.plain_text).join('');
+          th.textContent = cell.map(rt => rt.plain_text).join('');
           trh.append(th);
         });
-        thead.append(trh); table.append(thead);
+        thead.append(trh);
+        el.append(thead);
+        // Body
         const tbody = document.createElement('tbody');
-        rows.slice(1).forEach(r=>{
+        rows.slice(1).forEach(r => {
           const tr = document.createElement('tr');
-          r.table_row.cells.forEach(c=>{
+          r.table_row.cells.forEach(cell => {
             const td = document.createElement('td');
-            td.textContent = c.map(r=>r.plain_text).join('');
+            td.textContent = cell.map(rt => rt.plain_text).join('');
             tr.append(td);
           });
           tbody.append(tr);
         });
-        table.append(tbody);
+        el.append(tbody);
       }
-      el = table;
       break;
     }
+
+    // ─── Columns (layout) ─────────────────────────────────
     case 'column_list': {
-      const wrap = document.createElement('div');
-      wrap.className='column-list';
-      if(b.has_children){
+      el = document.createElement('div');
+      el.className = 'column-list';
+      if (b.has_children) {
         const cols = await fetchBlocks({ block_id: b.id });
-        for(const cb of cols) wrap.append(await renderBlock(cb));
+        for (const col of cols) {
+          el.append(await renderBlock(col));
+        }
       }
-      el = wrap; break;
+      break;
     }
     case 'column': {
-      const col = document.createElement('div');
-      col.className='column';
-      if(b.has_children){
+      el = document.createElement('div');
+      el.className = 'column';
+      if (b.has_children) {
         const kids = await fetchBlocks({ block_id: b.id });
-        for(const kb of kids) col.append(await renderBlock(kb));
+        for (const kb of kids) {
+          el.append(await renderBlock(kb));
+        }
       }
-      el = col; break;
+      break;
     }
-    case 'child_page':
+
+    // ─── Child Page ───────────────────────────────────────
+    case 'child_page': {
       el = document.createElement('a');
       el.href = `?page_id=${b.id}`;
-      el.className='child-page';
-      el.textContent = '📄 '+ b.child_page.title;
+      el.className = 'child-page';
+      el.textContent = '📄 ' + b.child_page.title;
       break;
-    case 'child_database':
-      el = document.createElement('iframe');
-      el.src = `https://www.notion.so/${b.id.replace(/-/g,'')}`;
-      el.setAttribute('frameborder','0');
-      break;
-    default:
+    }
+
+    // ─── Child Database ───────────────────────────────────
+    case 'child_database': {
+      // Query database via proxy, render as list
       el = document.createElement('div');
-      el.textContent = `[unsupported: ${b.type}]`;
-  }
+      el.className = 'db-list';
+      el.textContent = 'Loading database…';
+      const dbJson = await apiCall({
+        action: 'queryDatabase',
+        database_id: b.child_database.id
+      });
+      el.textContent = '';  // clear loading
+      (dbJson.results || []).forEach(rec => {
+        const name = rec.properties.Name?.title[0]?.plain_text || 'Untitled';
+        const a = document.createElement('a');
+        a.href = `?page_id=${rec.id}`;
+        a.className = 'db-item';
+        a.textContent = name;
+        el.append(a);
+      });
+      break;
+    }
+
+    // ─── Fallback for unsupported blocks ──────────────────
+    default: {
+      if (b.has_children) {
+        // Render children if any
+        el = document.createElement('div');
+        el.className = 'children';
+        const kids = await fetchBlocks({ block_id: b.id });
+        for (const kb of kids) {
+          el.append(await renderBlock(kb));
+        }
+      } else {
+        // Empty placeholder
+        el = document.createElement('div');
+        el.className = 'unsupported';
+        el.textContent = '';
+      }
+    }
+  } // end switch
+
   return el;
 }
+
 
 // Render full page content
 async function renderPage(pageId) {
