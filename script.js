@@ -1,182 +1,79 @@
-// endpoint proxy (sesuaikan jika bukan Vercel/Netlify)
+// Endpoint proxy (sesuaikan jika path-nya berbeda)
 const PROXY = '/api/proxy.js';
-const ROOT_PAGE_ID = '20895552-6aa5-8049-a7bc-ec16acd51067'; // ganti dengan Page ID utama
+// ID halaman root (lengkap dengan dash)
+const ROOT_PAGE_ID = '20895552-6aa5-8049-a7bc-ec16acd51067';
 
-/** Fetch children blocks */
-async function fetchBlocks({ page_id=null, block_id=null }) {
+// Daftar modul: title, icon-url, dan page_id.
+const modules = [
+  { title: 'Project Management', icon: 'icons/project.png', page_id: '20095552-6aa5-81ec-b880-ee143a748cbf' },
+  { title: 'Asset Integrity', icon: 'icons/operation.png', page_id: '20895552-6aa5-808b-878c-d4027b0545ea' },
+  { title: 'Engineering Departement', icon: 'icons/engineering.png', page_id: '20095552-6aa5-8145-a477-e38493673fed' },
+  { title: 'Procurement Department', icon: 'icons/procurement.png', page_id: '20095552-6aa5-8128-923f-fca68fcfc5f5' },
+  { title: 'HR & Manpower', icon: 'icons/hr.png', page_id: '20095552-6aa5-81ca-84f2-f82f18d694a2' },
+  { title: 'HSE Department', icon: 'icons/hse.png', page_id: '20095552-6aa5-81fa-8edb-d17153921690' },
+  { title: 'QA/QC Department', icon: 'icons/qaqc.png', page_id: '20095552-6aa5-8133-bf84-ce7896a5dac7' },
+  { title: 'Cost & Finance', icon: 'icons/cost.png', page_id: '20095552-6aa5-810d-8127-c99a10240d89' },
+];
+
+// Render breadcrumb
+function renderBreadcrumb(pageId, pageTitle = 'Home') {
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = `<a href="?page_id=${ROOT_PAGE_ID}">${pageTitle}</a> › ${pageId}`;
+}
+
+// Fetch blocks (dipakai bila nanti ingin fetch konten detail sub-page)
+async function fetchBlocks({ page_id = null, block_id = null }) {
   const res = await fetch(PROXY, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ page_id, block_id })
   });
-  if(!res.ok) throw new Error('Fetch error '+res.status);
-  const json = await res.json();
-  return json.results;
+  if (!res.ok) throw new Error('Fetch error ' + res.status);
+  const { results } = await res.json();
+  return results;
 }
 
-/** Render one block element */
-async function renderBlock(b) {
-  let el;
-  switch(b.type) {
-    case 'paragraph':
-      el = document.createElement('p');
-      el.innerText = b.paragraph.rich_text.map(t=>t.plain_text).join('');
-      break;
-    case 'heading_1':
-    case 'heading_2':
-    case 'heading_3': {
-      const lvl = b.type.split('_')[1];
-      el = document.createElement('h'+lvl);
-      el.innerText = b[b.type].rich_text[0]?.plain_text || '';
-      break;
-    }
-    case 'bulleted_list_item':
-    case 'numbered_list_item':
-      el = document.createElement('li');
-      el.innerText = b[b.type].rich_text.map(t=>t.plain_text).join('');
-      break;
-    case 'to_do':
-      el = document.createElement('label');
-      el.className = 'to-do';
-      const cb = document.createElement('input');
-      cb.type='checkbox'; cb.checked=b.to_do.checked; cb.disabled=true;
-      el.append(cb, ' '+b.to_do.rich_text.map(t=>t.plain_text).join(''));
-      break;
-    case 'toggle':
-      el = document.createElement('details');
-      el.className='block toggle';
-      const summary = document.createElement('summary');
-      summary.textContent = b.toggle.rich_text.map(t=>t.plain_text).join('');
-      el.appendChild(summary);
-      if(b.has_children) {
-        const kids = await fetchBlocks({ block_id:b.id });
-        for(const kb of kids) {
-          el.appendChild(await renderBlock(kb));
-        }
-      }
-      break;
-    case 'callout':
-      el = document.createElement('aside');
-      el.className='callout';
-      const ico = document.createElement('span');
-      ico.className='callout-icon';
-      ico.textContent = b.callout.icon?.emoji || '💡';
-      const txt = document.createElement('div');
-      txt.className='callout-content';
-      txt.innerText = b.callout.rich_text.map(t=>t.plain_text).join('');
-      el.append(ico, txt);
-      break;
-    case 'image':
-      el = document.createElement('img');
-      el.src = b.image[b.image.type].url;
-      el.alt = b.image.caption[0]?.plain_text||'';
-      break;
-    case 'embed':
-      el = document.createElement('iframe');
-      el.src = b.embed.url;
-      el.setAttribute('frameborder','0');
-      break;
-    case 'child_page':
-      el = document.createElement('a');
-      el.href = `?page_id=${b.id}`;
-      el.className='child-page';
-      el.innerText = '📄 '+b.child_page.title;
-      break;
-    case 'child_database':
-      el = document.createElement('iframe');
-      el.src = `https://www.notion.so/${b.id.replace(/-/g,'')}`;
-      el.setAttribute('frameborder','0');
-      break;
-    case 'table': {
-      const rows = await fetchBlocks({ block_id:b.id });
-      const table = document.createElement('table');
-      if(rows.length) {
-        const thead = document.createElement('thead');
-        const trh = document.createElement('tr');
-        rows[0].table_row.cells.forEach(c=>{
-          const th = document.createElement('th');
-          th.innerText = c.map(t=>t.plain_text).join('');
-          trh.appendChild(th);
-        });
-        thead.appendChild(trh);
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        rows.slice(1).forEach(r=>{
-          const tr = document.createElement('tr');
-          r.table_row.cells.forEach(c=>{
-            const td = document.createElement('td');
-            td.innerText = c.map(t=>t.plain_text).join('');
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
-      }
-      el = table;
-      break;
-    }
-    case 'column_list': {
-  // wadah untuk semua kolom
-  const wrapper = document.createElement('div');
-  wrapper.className = 'column-list';
-  // anaknya sudah ada di data.results, kita panggil renderBlock untuk tiap column
-  if (b.has_children) {
-    const cols = await fetchBlocks({ block_id: b.id });
-    for (const colBlock of cols) {
-      const colEl = await renderBlock(colBlock);  // ini akan memanggil case 'column'
-      wrapper.appendChild(colEl);
-    }
-  }
-  el = wrapper;
-  break;
+// Tampilkan dashboard grid
+function renderDashboard() {
+  renderBreadcrumb(ROOT_PAGE_ID, 'Home');
+  const container = document.getElementById('content');
+  container.innerHTML = `<div class="grid"></div>`;
+  const grid = container.querySelector('.grid');
+
+  modules.forEach(mod => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.onclick = () => loadPage(mod.page_id);
+
+    const img = document.createElement('img');
+    img.src = mod.icon;
+    img.alt = mod.title;
+
+    const label = document.createElement('a');
+    label.className = 'label';
+    label.textContent = mod.title;
+    label.href = `?page_id=${mod.page_id}`;
+
+    card.append(img, label);
+    grid.append(card);
+  });
 }
 
-case 'column': {
-  // satu kolom
-  const colWrapper = document.createElement('div');
-  colWrapper.className = 'column';
-  if (b.has_children) {
-    const children = await fetchBlocks({ block_id: b.id });
-    for (const child of children) {
-      colWrapper.appendChild(await renderBlock(child));
-    }
-  }
-  el = colWrapper;
-  break;
+// Load halaman detail modul (jika di-klik)
+async function loadPage(pageId) {
+  // Boleh tambahkan fitur fetch konten dengan fetchBlocks()
+  // Untuk demo, kita kembalikan ke dashboard
+  console.log('Load sub-page:', pageId);
+  // Jika ingin render sub-page, panggil fungsi renderBlocks()
+  // atau kembalikan dashboard:
+  renderDashboard();
 }
 
-    default:
-      el = document.createElement('div');
-      el.innerText = `[unsupported: ${b.type}]`;
-  }
-  return el;
-}
-
-/** Render full page */
-async function loadPage(pid) {
-  const content = document.getElementById('content');
-  content.innerHTML='';
-  // Breadcrumb
-  const bc = document.getElementById('breadcrumb');
-  bc.innerHTML = `<a href="?page_id=${ROOT_PAGE_ID}">Home</a> › ${pid}`;
-  const blocks = await fetchBlocks({ page_id:pid });
-  for(const b of blocks) {
-    if(b.type==='bulleted_list_item' || b.type==='numbered_list_item') {
-      let wrapTag = b.type==='bulleted_list_item'?'ul':'ol';
-      let last = content.lastElementChild;
-      if(!last || last.tagName.toLowerCase()!==wrapTag) {
-        last = document.createElement(wrapTag);
-        content.appendChild(last);
-      }
-      last.appendChild(await renderBlock(b));
-    } else {
-      content.appendChild(await renderBlock(b));
-    }
-  }
-}
-
+// Inisialisasi
 const params = new URLSearchParams(window.location.search);
-const pageId = params.get('page_id')||ROOT_PAGE_ID;
-loadPage(pageId).catch(e=>{
-  document.getElementById('content').innerText = 'Error: '+e.message;
-});
+if (params.has('page_id') && params.get('page_id') !== ROOT_PAGE_ID) {
+  // Jika ada page_id non-root, bisa panggil loadPage()
+  loadPage(params.get('page_id'));
+} else {
+  renderDashboard();
+}

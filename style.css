@@ -156,3 +156,94 @@ html, body {
   flex-direction: column;
   gap: 0.75rem;
 }
+/* ────────────────────────────────────────
+   Base & Typography
+──────────────────────────────────────── */
+:root {
+  --font-sans: 'Inter', sans-serif;
+  --text-color: #37352f;
+  --bg-color: #ffffff;
+  --primary: #0047AB;
+  --card-bg: #f8f9fa;
+  --border: #0047AB;
+}
+
+html, body {
+  margin: 0; padding: 0;
+  font-family: var(--font-sans);
+  color: var(--text-color);
+  background: #f4f5f7;
+  line-height: 1.5;
+}
+header {
+  text-align: center;
+  padding: 2rem 0 1rem;
+}
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+/* Breadcrumb */
+#breadcrumb {
+  max-width: 960px;
+  margin: 0 auto 1rem;
+  padding: 0 1rem;
+  font-size: 0.9rem;
+}
+#breadcrumb a {
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--primary);
+}
+#breadcrumb a:hover { background: rgba(0,71,171,0.1); }
+
+/* Main content container */
+#content {
+  max-width: 960px;
+  margin: 0 auto 2rem;
+  padding: 0 1rem;
+}
+
+/* Grid of cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  background: var(--bg-color);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Card style */
+.card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  text-align: center;
+  padding: 1.25rem 0.5rem;
+  cursor: pointer;
+  transition: box-shadow .2s ease, transform .1s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+/* Card icon */
+.card img {
+  display: block;
+  margin: 0 auto 0.75rem;
+  max-width: 60px;
+  height: auto;
+}
+
+/* Card label */
+.card .label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--primary);
+  text-decoration: none;
+}
