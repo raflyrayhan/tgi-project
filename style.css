@@ -201,7 +201,7 @@ header h1 {
 
 /* Main content container */
 #content {
-  max-width: 960px;
+  max-width: 1040px;
   margin: 0 auto 2rem;
   padding: 0 1rem;
 }
