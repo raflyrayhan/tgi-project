@@ -1,6 +1,6 @@
 // endpoint proxy (sesuaikan jika bukan Vercel/Netlify)
-const PROXY = '/api/proxy';
-const ROOT_PAGE_ID = '208955526aa58049a7bcec16acd51067'; // ganti dengan Page ID utama
+const PROXY = '/api/proxy.js';
+const ROOT_PAGE_ID = '20895552-6aa5-8049-a7bc-ec16acd51067'; // ganti dengan Page ID utama
 
 /** Fetch children blocks */
 async function fetchBlocks({ page_id=null, block_id=null }) {
@@ -115,6 +115,36 @@ async function renderBlock(b) {
       el = table;
       break;
     }
+    case 'column_list': {
+  // wadah untuk semua kolom
+  const wrapper = document.createElement('div');
+  wrapper.className = 'column-list';
+  // anaknya sudah ada di data.results, kita panggil renderBlock untuk tiap column
+  if (b.has_children) {
+    const cols = await fetchBlocks({ block_id: b.id });
+    for (const colBlock of cols) {
+      const colEl = await renderBlock(colBlock);  // ini akan memanggil case 'column'
+      wrapper.appendChild(colEl);
+    }
+  }
+  el = wrapper;
+  break;
+}
+
+case 'column': {
+  // satu kolom
+  const colWrapper = document.createElement('div');
+  colWrapper.className = 'column';
+  if (b.has_children) {
+    const children = await fetchBlocks({ block_id: b.id });
+    for (const child of children) {
+      colWrapper.appendChild(await renderBlock(child));
+    }
+  }
+  el = colWrapper;
+  break;
+}
+
     default:
       el = document.createElement('div');
       el.innerText = `[unsupported: ${b.type}]`;
