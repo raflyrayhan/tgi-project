@@ -23,7 +23,7 @@ async function apiCall(body) {
 async function fetchPageTitle(pageId) {
   const json = await apiCall({ action:'getPage', page_id: pageId });
   // asumsikan proxy me-return full page object
-  return json.properties.title.title[0]?.plain_text || 'Untitled';
+  return json.properties.title.title[0]?.plain_text;
 }
 
 // Fetch block children
@@ -230,7 +230,10 @@ function renderDashboard() {
 // On load
 (async()=>{
   const params = new URLSearchParams(window.location.search);
-  const pid = params.get('page_id')||ROOT_PAGE_ID;
-  if(pid===ROOT_PAGE_ID) renderDashboard();
-  else await renderPage(pid);
+  const pid    = params.get('page_id') || ROOT_PAGE_ID;
+  if (pid === ROOT_PAGE_ID) {
+    renderDashboard();
+  } else {
+    await renderPage(pid);
+  }
 })();
