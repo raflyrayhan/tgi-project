@@ -6,12 +6,12 @@ const ROOT_PAGE_ID = '20895552-6aa5-8049-a7bc-ec16acd51067';
 // Daftar modul: title, icon-url, dan page_id.
 const modules = [
   { title: 'Project Management', icon: 'icons/project.png', page_id: '20095552-6aa5-81ec-b880-ee143a748cbf' },
-  { title: 'Asset Integrity', icon: 'icons/operation.png', page_id: '20895552-6aa5-808b-878c-d4027b0545ea' },
-  { title: 'Engineering Departement', icon: 'icons/engineering.png', page_id: '20095552-6aa5-8145-a477-e38493673fed' },
-  { title: 'Procurement Department', icon: 'icons/procurement.png', page_id: '20095552-6aa5-8128-923f-fca68fcfc5f5' },
+  { title: 'Asset Integrity', icon: 'icons/asset.png', page_id: '20895552-6aa5-808b-878c-d4027b0545ea' },
+  { title: 'Engineering Departement', icon: 'icons/engineer.png', page_id: '20095552-6aa5-8145-a477-e38493673fed' },
+  { title: 'Procurement Department', icon: 'icons/proc.png', page_id: '20095552-6aa5-8128-923f-fca68fcfc5f5' },
   { title: 'HR & Manpower', icon: 'icons/hr.png', page_id: '20095552-6aa5-81ca-84f2-f82f18d694a2' },
   { title: 'HSE Department', icon: 'icons/hse.png', page_id: '20095552-6aa5-81fa-8edb-d17153921690' },
-  { title: 'QA/QC Department', icon: 'icons/qaqc.png', page_id: '20095552-6aa5-8133-bf84-ce7896a5dac7' },
+  { title: 'QA/QC Department', icon: 'icons/qa.png', page_id: '20095552-6aa5-8133-bf84-ce7896a5dac7' },
   { title: 'Cost & Finance', icon: 'icons/cost.png', page_id: '20095552-6aa5-810d-8127-c99a10240d89' },
 ];
 
