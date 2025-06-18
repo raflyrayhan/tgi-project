@@ -312,3 +312,45 @@ background: rgba(255,255,255,0.3);
 .unsupported {
   display: none;
 }
+
+/* Tabel Notion-style */
+.notion-table-view {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-family: var(--font-sans);
+}
+.notion-table-view th,
+.notion-table-view td {
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.notion-table-view thead {
+  background: #fafbfc;
+}
+.notion-table-view tbody tr:nth-child(even) {
+  background: #f7f8f9;
+}
+
+/* Date cell */
+.date-cell {
+  white-space: nowrap;
+  font-size: 0.95em;
+  color: var(--muted-color);
+}
+
+/* Select pills */
+.select-pill {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  margin: 0.1rem;
+  border-radius: 999px;
+  background: #e0ebff;
+  color: #2c4fab;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.callout-wrapper { margin: 1rem 0; }
+.db-wrapper     { margin: 1.5rem 0; }

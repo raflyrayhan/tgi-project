@@ -213,26 +213,85 @@ async function renderBlock(b) {
     }
 
     // ─── Child Database ───────────────────────────────────
-    case 'child_database': {
-      // Query database via proxy, render as list
-      el = document.createElement('div');
-      el.className = 'db-list';
-      el.textContent = 'Loading database…';
-      const dbJson = await apiCall({
-        action: 'queryDatabase',
-        database_id: b.child_database.id
-      });
-      el.textContent = '';  // clear loading
-      (dbJson.results || []).forEach(rec => {
-        const name = rec.properties.Name?.title[0]?.plain_text || 'Untitled';
-        const a = document.createElement('a');
-        a.href = `?page_id=${rec.id}`;
-        a.className = 'db-item';
-        a.textContent = name;
-        el.append(a);
-      });
-      break;
-    }
+   case 'child_database': {
+  // 1) Query database
+  const dbId = b.child_database.id;
+  const json = await apiCall({
+    action: 'queryDatabase',
+    database_id: dbId
+  });
+
+  // 2) Ambil daftar kolom sesuai urutan di Notion
+  const props = json.properties;                    // object keyed by name
+  const colOrder = Object.keys(props).map(name => {
+    return { name, type: props[name].type };
+  });
+
+  // 3) Buat tabel
+  const table = document.createElement('table');
+  table.className = 'notion-table-view';
+
+  // 3a) THEAD
+  const thead = document.createElement('thead');
+  const trh   = document.createElement('tr');
+  colOrder.forEach(col => {
+    const th = document.createElement('th');
+    th.textContent = col.name;
+    trh.append(th);
+  });
+  thead.append(trh);
+  table.append(thead);
+
+  // 3b) TBODY
+  const tbody = document.createElement('tbody');
+  (json.results || []).forEach(rec => {
+    const tr = document.createElement('tr');
+    colOrder.forEach(col => {
+      const td = document.createElement('td');
+      const cell = rec.properties[col.name];
+      // format berdasarkan tipe
+      switch (col.type) {
+        case 'title':
+          td.textContent = cell.title[0]?.plain_text || '';
+          break;
+        case 'rich_text':
+          td.textContent = cell.rich_text[0]?.plain_text || '';
+          break;
+        case 'date':
+          td.textContent = cell.date?.start
+            ? new Date(cell.date.start).toLocaleDateString()
+            : '';
+          td.className = 'date-cell';
+          break;
+        case 'select':
+          td.textContent = cell.select?.name || '';
+          td.className = 'select-pill';
+          break;
+        case 'multi_select':
+          cell.multi_select.forEach(ms => {
+            const span = document.createElement('span');
+            span.textContent = ms.name;
+            span.className = 'select-pill';
+            td.append(span);
+          });
+          break;
+        case 'checkbox':
+          td.innerHTML = cell.checkbox ? '✔️' : '';
+          break;
+        default:
+          // fallback plain
+          td.textContent = (cell.plain_text || cell.email || '') + '';
+      }
+      tr.append(td);
+    });
+    tbody.append(tr);
+  });
+  table.append(tbody);
+
+  el = table;
+  break;
+}
+
 
     // ─── Fallback for unsupported blocks ──────────────────
     default: {
@@ -259,30 +318,69 @@ async function renderBlock(b) {
 
 // Render full page content
 async function renderPage(pageId) {
+  // 1. Ambil judul page untuk breadcrumb
   const title = await fetchPageTitle(pageId);
+
+  // Tampilkan breadcrumb
   document.getElementById('breadcrumb').innerHTML =
     `<a href="?page_id=${ROOT_PAGE_ID}">Home</a> › ${title}`;
-  const content = document.getElementById('content');
-  content.innerHTML = '';  
 
+  // Reset konten utama
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+
+  // 2. Fetch semua block children
   const blocks = await fetchBlocks({ page_id: pageId });
-  let listBuffer=null, listType=null;
-  for(const b of blocks) {
-    // group list items
-    if(b.type==='bulleted_list_item' || b.type==='numbered_list_item') {
-      const tag = b.type==='bulleted_list_item'?'ul':'ol';
-      if(!listBuffer || listType!==tag){
-        listType=tag;
+
+  // 3. Render callout (hanya satu, jika ada)
+  const calloutBlock = blocks.find(b => b.type === 'callout');
+  if (calloutBlock) {
+    const calloutEl = await renderBlock(calloutBlock);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'callout-wrapper';
+    wrapper.append(calloutEl);
+    content.append(wrapper);
+  }
+
+  // 4. Render setiap child_database sebagai tabel
+  for (const dbBlock of blocks.filter(b => b.type === 'child_database')) {
+    const dbTable = await renderBlock(dbBlock);
+    // wrap agar jelas terpisah
+    const dbWrapper = document.createElement('div');
+    dbWrapper.className = 'db-wrapper';
+    dbWrapper.append(dbTable);
+    content.append(dbWrapper);
+  }
+
+  // 5. Render blok–blok lain (exclude callout + child_database)
+  let listBuffer = null;
+  let listType = null;
+
+  for (const b of blocks) {
+    // skip callout & child_database, sudah di-render
+    if (b.type === 'callout' || b.type === 'child_database') {
+      // reset any open list
+      listBuffer = null; listType = null;
+      continue;
+    }
+
+    // grouping list items
+    if (b.type === 'bulleted_list_item' || b.type === 'numbered_list_item') {
+      const tag = b.type === 'bulleted_list_item' ? 'ul' : 'ol';
+      if (!listBuffer || listType !== tag) {
+        listType = tag;
         listBuffer = document.createElement(tag);
         content.append(listBuffer);
       }
       listBuffer.append(await renderBlock(b));
     } else {
-      listBuffer=null; listType=null;
+      // normal block → close any open list first
+      listBuffer = null; listType = null;
       content.append(await renderBlock(b));
     }
   }
 }
+
 
 // Render dashboard (home)
 function renderDashboard() {
@@ -316,12 +414,8 @@ function renderDashboard() {
 }
 
 // On load
-(async()=>{
-  const params = new URLSearchParams(window.location.search);
-  const pid    = params.get('page_id') || ROOT_PAGE_ID;
-  if (pid === ROOT_PAGE_ID) {
-    renderDashboard();
-  } else {
-    await renderPage(pid);
-  }
+(async () => {
+  const pid = new URLSearchParams(window.location.search).get('page_id') || ROOT_PAGE_ID;
+  if (pid === ROOT_PAGE_ID) renderDashboard();
+  else await renderPage(pid);
 })();
