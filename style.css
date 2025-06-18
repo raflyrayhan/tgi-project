@@ -1,75 +1,147 @@
 /* ────────────────────────────────────────
-   Base & Typography
+   Variables & Base
 ──────────────────────────────────────── */
 :root {
+  /* Font Families */
   --font-sans: 'Inter', sans-serif;
   --font-mono: 'Menlo', monospace;
+
+  /* Colors */
   --text-color: #37352f;
-  --bg-color: #ffffff;
+  --bg-page:     #f4f5f7;
+  --bg-content:  #ffffff;
   --muted-color: #6b6b6b;
-  --border-color: #ebeced;
+  --border-color:#ebeced;
+  --primary:     #0047AB;
+  --card-bg:     #f8f9fa;
 }
 
-html, body {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
   margin: 0;
   padding: 0;
-  background: #f5f6fa;
+  font-family: var(--font-sans);
+  color: var(--text-color);
+  background: var(--bg-page);
+  line-height: 1.5;
 }
 
+/* Utility */
+.hidden { display: none !important; }
+.loading { color: var(--muted-color); text-align: center; }
+
+/* Global Links */
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ────────────────────────────────────────
+   Header & Breadcrumb
+──────────────────────────────────────── */
+header {
+  text-align: center;
+  padding: 2rem 1rem 1rem;
+  background: var(--bg-content);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+#breadcrumb {
+  max-width: 1080px;
+  margin: 0.5rem auto 1.5rem;
+  padding: 0 1rem;
+  font-size: 0.9rem;
+}
+#breadcrumb a {
+  border-bottom: 1px solid var(--primary);
+}
+#breadcrumb a:hover {
+  background: rgba(0,71,171,0.1);
+}
+
+/* ────────────────────────────────────────
+   Page Cover (Optional)
+──────────────────────────────────────── */
 .header-cover {
-  width: 100vw;
-  height: 210px;         /* Sesuaikan tinggi sesuai desain kamu */
   position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
+  width: 100vw;
+  left: 50%; margin-left: -50vw;
+  height: 210px;
+  background: var(--primary);
   overflow: hidden;
-  background: #00529B;
   box-shadow: 0 4px 18px rgba(0,82,155,0.09);
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
 }
-
 .header-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: left center;
-  border: none;
-  margin: 0;
-  padding: 0;
 }
 
-h1 {
-    text-align: left;
-    margin-top: 100px;
-    padding-top: 0px;
-    padding-left: 80px;
-    font-size: 40%;
-}
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-sans);
-  color: var(--text-color);
-  background: #f4f5f7;
-  line-height: 1.6;
-}
-
-/* Container */
+/* ────────────────────────────────────────
+   Main Container & Layout
+──────────────────────────────────────── */
 #content {
-  max-width: 768px;
-  margin: 2rem auto;
-  margin-top: 100px;
+  max-width: 1080px;
+  margin: 0 auto 2rem;
   padding: 0 1rem;
-  background: var(--bg-color);
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* Headings */
+/* ────────────────────────────────────────
+   Dashboard Grid & Cards
+──────────────────────────────────────── */
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  padding: 1rem;
+  background: var(--bg-content);
+  border-radius: 8px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  text-align: center;
+  padding: 1rem;
+  cursor: pointer;
+  transition: transform .1s ease, box-shadow .2s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.card img {
+  display: block;
+  margin: 0 auto 0.75rem;
+  max-width: 60px;
+  height: auto;
+}
+.card .label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--primary);
+}
+
+/* ────────────────────────────────────────
+   Typography & Content Blocks
+──────────────────────────────────────── */
 #content h1,
 #content h2,
 #content h3 {
@@ -81,20 +153,16 @@ html, body {
 #content h2 { font-size: 1.5rem; }
 #content h3 { font-size: 1.25rem; }
 
-/* Paragraph */
 #content p {
   margin: 0.75rem 0;
   white-space: pre-wrap;
 }
 
-/* Links */
 #content a {
-  color: #0969da;
-  text-decoration: none;
-  border-bottom: 1px solid #0969da;
+  border-bottom: 1px solid var(--primary);
 }
 #content a:hover {
-  background-color: rgba(9,105,218,0.1);
+  background: rgba(9,105,218,0.1);
 }
 
 /* Lists */
@@ -116,7 +184,7 @@ html, body {
   font-style: italic;
 }
 
-/* Code & Pre */
+/* Code & Preformatted */
 #content pre {
   background: #f6f8fa;
   padding: 1rem;
@@ -150,7 +218,7 @@ html, body {
   font-weight: 600;
 }
 
-/* Images & Embeds */
+/* Images & Iframes */
 #content img,
 #content iframe {
   max-width: 100%;
@@ -158,7 +226,7 @@ html, body {
   margin: 1rem 0;
 }
 
-/* Child‐page links */
+/* Child-page Links */
 .child-page {
   display: inline-block;
   margin: 0.5rem 0;
@@ -169,7 +237,7 @@ html, body {
   text-decoration: underline;
 }
 
-/* Toggle (minimal) */
+/* Toggle Blocks */
 .block.toggle {
   margin: 0.5rem 0;
 }
@@ -181,10 +249,7 @@ html, body {
   margin-left: 1rem;
 }
 
-/* Utilities */
-.hidden { display: none !important; }
-
-/* Columns */
+/* Columns Layout */
 .column-list {
   display: flex;
   gap: 1rem;
@@ -196,124 +261,16 @@ html, body {
   flex-direction: column;
   gap: 0.75rem;
 }
-/* ────────────────────────────────────────
-   Base & Typography
-──────────────────────────────────────── */
-:root {
-  --font-sans: 'Inter', sans-serif;
-  --text-color: #37352f;
-  --bg-color: #ffffff;
-  --primary: #0047AB;
-  --card-bg: #f8f9fa;
-  --border: #0047AB;
-}
 
-html, body {
-  margin: 0; padding: 0;
-  font-family: var(--font-sans);
-  color: var(--text-color);
-  background: #f4f5f7;
-  line-height: 1.5;
-}
-header {
-  text-align: center;
-  padding: 2rem 0 1rem;
-}
-header h1 {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
-}
-
-/* Breadcrumb */
-#breadcrumb {
-  max-width: 960px;
-  margin: 0 auto 1rem;
-  padding: 0 1rem;
-  font-size: 0.9rem;
-  text-align: left;
-}
-#breadcrumb a {
-  color: var(--primary);
-  text-decoration: none;
-  border-bottom: 1px solid var(--primary);
-}
-#breadcrumb a:hover { background: rgba(0,71,171,0.1); }
-
-/* Main content container */
-#content {
-  max-width: 1080px;
-  margin: 0 auto 2rem;
-  padding: 0 1rem;
-}
-
-/* Grid of cards */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
-  background: rgba(255,255,255,0.3); 
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.1);
-  opacity: 10;
-}
-
-/* Card style */
-.card {
-background: rgba(255,255,255,0.3); 
-  border: 0px solid var(--border);
-  border-radius: 0px;
-  text-align: center;
-  padding: 1.00rem 0.5rem;
-  cursor: pointer;
-  transition: box-shadow .2s ease, transform .1s ease;
-}
-.card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  transform: translateY(-2px);
-}
-
-/* Card icon */
-.card img {
-  display: block;
-  margin: 0 auto 0.75rem;
-  max-width: 60px;
-  height: auto;
-}
-
-/* Card label */
-.card .label {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--primary);
-  text-decoration: none;
-}
-
-/* Database list */
-.db-list {
+/* Callout & Database Wrappers */
+.callout-wrapper {
   margin: 1rem 0;
-  padding: 0;
-  list-style: none;
 }
-.db-item {
-  display: block;
-  padding: 0.3rem 0;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--primary);
-  text-decoration: none;
-  font-weight: 500;
-}
-.db-item:hover {
-  background: rgba(0,71,171,0.05);
+.db-wrapper {
+  margin: 1.5rem 0;
 }
 
-/* Hidden unsupported */
-.unsupported {
-  display: none;
-}
-
-/* Tabel Notion-style */
+/* Notion-Style Database Table */
 .notion-table-view {
   width: 100%;
   border-collapse: collapse;
@@ -324,7 +281,6 @@ background: rgba(255,255,255,0.3);
 .notion-table-view td {
   border: 1px solid var(--border-color);
   padding: 0.5rem 0.75rem;
-  text-align: left;
 }
 .notion-table-view thead {
   background: #fafbfc;
@@ -333,14 +289,12 @@ background: rgba(255,255,255,0.3);
   background: #f7f8f9;
 }
 
-/* Date cell */
+/* Special Cells */
 .date-cell {
   white-space: nowrap;
   font-size: 0.95em;
   color: var(--muted-color);
 }
-
-/* Select pills */
 .select-pill {
   display: inline-block;
   padding: 0.1rem 0.5rem;
@@ -351,6 +305,3 @@ background: rgba(255,255,255,0.3);
   font-size: 0.85em;
   font-weight: 500;
 }
-
-.callout-wrapper { margin: 1rem 0; }
-.db-wrapper     { margin: 1.5rem 0; }

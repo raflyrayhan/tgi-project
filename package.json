@@ -1,5 +1,16 @@
 {
   "name": "tgi-erp",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node ."
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.1"
+  }
 }
