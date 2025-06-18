@@ -23,8 +23,10 @@ function hyphenate(raw) {
 }
 
 /**
- * Generic proxy caller for Notion API actions.
- * Supports: getPage, getBlocks, queryDatabase.
+ * Generic proxy caller for Notion API actions:
+ *  - getPage
+ *  - getBlocks
+ *  - queryDatabase
  */
 async function apiCall(body) {
   const res = await fetch(PROXY, {
@@ -41,7 +43,7 @@ async function apiCall(body) {
 // 2) Fetch Helpers
 // ─────────────────────────────────
 
-/** Get page metadata (for title) */
+/** Get page title (for breadcrumb) */
 async function fetchPageTitle(pageId) {
   const json = await apiCall({ action: 'getPage', page_id: pageId });
   return json.properties.title.title[0]?.plain_text || 'Untitled';
@@ -51,7 +53,7 @@ async function fetchPageTitle(pageId) {
 async function fetchBlocks({ page_id = null, block_id = null }) {
   const json = await apiCall({
     action:   'getBlocks',
-    page_id, block_id
+    page_id, block_id,
   });
   return json.results || [];
 }
@@ -148,7 +150,7 @@ async function renderBlock(b) {
     case 'embed': {
       el = document.createElement('iframe');
       el.src = b.embed.url;
-      el.setAttribute('frameborder', '0');
+      el.setAttribute('frameborder','0');
       break;
     }
     case 'video': {
@@ -194,7 +196,7 @@ async function renderBlock(b) {
           const tr = document.createElement('tr');
           r.table_row.cells.forEach(cell => {
             const td = document.createElement('td');
-            td.textContent = cell.map(rt=>rt.plain_text).join('');
+            td.textContent = cell.map(rt => rt.plain_text).join('');
             tr.append(td);
           });
           tbody.append(tr);
@@ -204,13 +206,15 @@ async function renderBlock(b) {
       break;
     }
 
-    // — Columns Layout
+    // — Columns layout
     case 'column_list': {
       el = document.createElement('div');
       el.className = 'column-list';
       if (b.has_children) {
         const cols = await fetchBlocks({ block_id: b.id });
-        for (let c of cols) el.append(await renderBlock(c));
+        for (let c of cols) {
+          el.append(await renderBlock(c));
+        }
       }
       break;
     }
@@ -219,7 +223,9 @@ async function renderBlock(b) {
       el.className = 'column';
       if (b.has_children) {
         const kids = await fetchBlocks({ block_id: b.id });
-        for (let k of kids) el.append(await renderBlock(k));
+        for (let k of kids) {
+          el.append(await renderBlock(k));
+        }
       }
       break;
     }
@@ -229,7 +235,7 @@ async function renderBlock(b) {
       el = document.createElement('a');
       el.href   = `?page_id=${b.id}`;
       el.className = 'child-page';
-      el.textContent = b.child_page.title;
+      el.textContent = '📄 ' + b.child_page.title;
       break;
     }
 
@@ -237,17 +243,20 @@ async function renderBlock(b) {
     case 'child_database': {
       const dbJson = await apiCall({
         action:      'queryDatabase',
-        database_id: b.child_database.id
+        database_id: b.child_database.id,
       });
-      // Build column list in order
+
+      // Build column order
       const props    = dbJson.properties;
-      const colOrder = Object.keys(props)
-        .map(name => ({ name, type: props[name].type }));
+      const colOrder = Object.keys(props).map(name => ({
+        name, type: props[name].type
+      }));
 
       // Create table
       el = document.createElement('table');
       el.className = 'notion-table-view';
-      // Header
+
+      // THEAD
       const thead = document.createElement('thead');
       const trh   = document.createElement('tr');
       colOrder.forEach(col => {
@@ -255,9 +264,10 @@ async function renderBlock(b) {
         th.textContent = col.name;
         trh.append(th);
       });
-      thead.append(trh); el.append(thead);
+      thead.append(trh);
+      el.append(thead);
 
-      // Body
+      // TBODY
       const tbody = document.createElement('tbody');
       (dbJson.results || []).forEach(rec => {
         const tr = document.createElement('tr');
@@ -282,7 +292,7 @@ async function renderBlock(b) {
               td.className = 'select-pill';
               break;
             case 'multi_select':
-              (cell.multi_select||[]).forEach(ms => {
+              (cell.multi_select || []).forEach(ms => {
                 const sp = document.createElement('span');
                 sp.textContent = ms.name;
                 sp.className   = 'select-pill';
@@ -303,14 +313,15 @@ async function renderBlock(b) {
       break;
     }
 
-    // — Fallback: skip or render children
+    // — Fallback: render children or nothing
     default: {
       if (b.has_children) {
-        const wrap = document.createElement('div');
-        wrap.className = 'children';
+        el = document.createElement('div');
+        el.className = 'children';
         const kids = await fetchBlocks({ block_id: b.id });
-        for (let k of kids) wrap.append(await renderBlock(k));
-        el = wrap;
+        for (let k of kids) {
+          el.append(await renderBlock(k));
+        }
       } else {
         el = document.createElement('div');
         el.className = 'unsupported';
@@ -321,39 +332,41 @@ async function renderBlock(b) {
   return el;
 }
 
-// 4) Render Sub-Page (full content, callout+tables+blocks)
-// ─────────────────────────────────────────────────────────
+// 4) Render Sub-Page (callout, tables, then blocks)
+// ───────────────────────────────────────────────────────────
 async function renderPage(pageId) {
   // Breadcrumb
   const title = await fetchPageTitle(pageId);
   document.getElementById('breadcrumb').innerHTML =
     `<a href="?page_id=${ROOT_PAGE_ID}">Home</a> › ${title}`;
 
-  // Clear & fetch
+  // Clear & fetch blocks
   const content = document.getElementById('content');
   content.innerHTML = '';
-  const blocks  = await fetchBlocks({ page_id: pageId });
+  const blocks    = await fetchBlocks({ page_id: pageId });
 
-  // 1) Callout
-  const calloutBlock = blocks.find(b => b.type === 'callout');
-  if (calloutBlock) {
-    const co = await renderBlock(calloutBlock);
+  // 1) Callout (if any)
+  const callout = blocks.find(b => b.type === 'callout');
+  if (callout) {
+    const coEl = await renderBlock(callout);
     const wrap = document.createElement('div');
     wrap.className = 'callout-wrapper';
-    wrap.append(co);
+    wrap.append(coEl);
     content.append(wrap);
   }
 
-  // 2) Child databases
-  for (let dbB of blocks.filter(b => b.type === 'child_database')) {
-    const tbl = await renderBlock(dbB);
-    const wrap = document.createElement('div');
-    wrap.className = 'db-wrapper';
-    wrap.append(tbl);
-    content.append(wrap);
+  // 2) Child databases → full tables
+  for (let b of blocks) {
+    if (b.type === 'child_database') {
+      const tbl = await renderBlock(b);
+      const wrap = document.createElement('div');
+      wrap.className = 'db-wrapper';
+      wrap.append(tbl);
+      content.append(wrap);
+    }
   }
 
-  // 3) Sisanya → grouping list & renderBlock
+  // 3) Sisanya → grouping lists, then renderBlock
   let listBuf = null, listType = null;
   for (let b of blocks) {
     if (b.type === 'callout' || b.type === 'child_database') {
@@ -375,15 +388,17 @@ async function renderPage(pageId) {
   }
 }
 
-// 5) Render Dashboard (Home) dengan grid-card clickable
-// ─────────────────────────────────────────────────────────
+// 5) Render Dashboard (Home) → grid-card clickable
+// ───────────────────────────────────────────────────────────
 function renderDashboard() {
   document.getElementById('breadcrumb').innerHTML =
     `<a href="?page_id=${ROOT_PAGE_ID}">Home</a>`;
+
   const main = document.getElementById('content');
   main.innerHTML = `<div class="grid"></div>`;
   const grid = main.querySelector('.grid');
 
+  // Sesuaikan dengan Page ID Notion Anda:
   const modules = [
     { title:'Project Management',      icon:'icons/project.png', page_id:'20095552-6aa5-81ec-b880-ee143a748cbf' },
     { title:'Asset Integrity',         icon:'icons/asset.png',   page_id:'20895552-6aa5-808b-878c-d4027b0545ea' },
@@ -406,15 +421,15 @@ function renderDashboard() {
     img.src = mod.icon; img.alt = mod.title;
 
     const lbl = document.createElement('div');
-    lbl.className    = 'label';
-    lbl.textContent  = mod.title;
+    lbl.className   = 'label';
+    lbl.textContent = mod.title;
 
     link.append(img, lbl);
     grid.append(link);
   });
 }
 
-// ──────────── Auto-init: Dashboard vs Sub-Page ────────────
+// ───────── Auto-init: Dashboard vs Sub-Page ─────────
 (async () => {
   const pid = new URLSearchParams(window.location.search)
     .get('page_id') || ROOT_PAGE_ID;
