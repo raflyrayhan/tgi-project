@@ -1,70 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PT TGI – Notion Full-Page Demo</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: sans-serif;
-      background: #f4f5f7;
-      display: flex; flex-direction: column;
-      min-height: 100vh;
-    }
-    header {
-      background: #004191; color: #fff;
-      padding: 1rem; text-align: center;
-    }
-    header h1 {
-      margin: 0; font-size: 1.5rem;
-      letter-spacing: 0.05em;
-    }
-    /* Wrapper untuk iframe internal app kamu */
-    .iframe-wrapper {
-      position: relative;
-      width: 100%;
-      /* 3:2 aspect ratio, bisa diubah sesuai kebutuhan */
-      padding-bottom: 66.67%;
-      overflow: hidden;
-      flex-grow: 1;
-    }
-    .iframe-wrapper iframe {
-      position: absolute;
-      top:0; left:0;
-      width:100%; height:100%;
-      border:none;
-    }
-    footer {
-      background: #fff;
-      padding: 0.5rem;
-      text-align: center;
-      font-size: 0.85rem;
-      color: #6b6b6b;
-    }
-    footer a { color: #0969da; text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-  </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>PT. TransGasIndo Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
-  <!-- HEADER -->
+    <div class="header-cover mb-4">
+        <img src="icons/cover.png" class="img-fluid cover-img" alt="Header Cover">
+    </div>
   <header>
-    <h1>PT TGI ERP</h1>
+    <h1 style="font-size: 2.6rem;">TGI ERP</h1>
   </header>
 
-  <!-- EMBED APP KAMU SENDIRI (bukan notion.so) -->
-  <div class="iframe-wrapper">
-    <iframe
-      src="http://192.168.1.231:3000/?page_id=20895552-6aa5-8049-a7bc-ec16acd51067"
-      sandbox="allow-scripts allow-same-origin"
-    ></iframe>
-  </div>
+  <nav id="breadcrumb">
+    <!-- akan diisi oleh script.js -->
+  </nav>
 
-  <!-- FOOTER -->
-  <footer>
-    Powered by <a href="/">TGI ERP App</a>
-  </footer>
+  <main id="content">
+    <!-- Dashboard grid akan di-render di sini -->
+  </main>
 
+  <script src="script.js"></script>
 </body>
 </html>
